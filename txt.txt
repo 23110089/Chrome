@@ -1,0 +1,31 @@
+import psutil
+import time
+
+def get_network_speed():
+    # Lấy thông tin về lưu lượng mạng
+    net_io = psutil.net_io_counters()
+
+    # Trả về số byte đã nhận và gửi
+    bytes_received = net_io.bytes_recv
+    bytes_sent = net_io.bytes_sent
+    return bytes_received, bytes_sent
+
+def monitor_network_speed():
+    # Lấy thông tin mạng lần đầu
+    old_received, old_sent = get_network_speed()
+    
+    # Chờ một khoảng thời gian (ví dụ 1 giây)
+    time.sleep(1)
+    
+    # Lấy thông tin mạng sau khi chờ
+    new_received, new_sent = get_network_speed()
+    
+    # Tính toán tốc độ nhận và gửi trong 1 giây
+    download_speed = (new_received - old_received) / 1_000_000  # Mbps
+    upload_speed = (new_sent - old_sent) / 1_000_000  # Mbps
+    
+    print(f"Tốc độ tải xuống: {download_speed:.2f} Mbps")
+    print(f"Tốc độ tải lên: {upload_speed:.2f} Mbps")
+
+# Gọi hàm để theo dõi tốc độ mạng
+monitor_network_speed()
