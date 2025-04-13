@@ -1,31 +1,57 @@
-import psutil
-import time
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from time import sleep
+import psutil, os
 
-def get_network_speed():
-    # Lấy thông tin về lưu lượng mạng
-    net_io = psutil.net_io_counters()
+# Thiết lập chế độ không giao diện (headless)
+options = Options()
+options.add_argument('--headless')        # chạy không giao diện
+options.add_argument('--disable-gpu')     # tắt tăng tốc GPU
+options.add_argument('--no-sandbox')      # cần thiết khi chạy trên VPS
+options.add_argument('--disable-dev-shm-usage')  # tránh lỗi bộ nhớ trên máy ảo
 
-    # Trả về số byte đã nhận và gửi
-    bytes_received = net_io.bytes_recv
-    bytes_sent = net_io.bytes_sent
-    return bytes_received, bytes_sent
+# Khởi tạo driver
+driver = webdriver.Chrome(options=options)
 
-def monitor_network_speed():
-    # Lấy thông tin mạng lần đầu
-    old_received, old_sent = get_network_speed()
-    
-    # Chờ một khoảng thời gian (ví dụ 1 giây)
-    time.sleep(1)
-    
-    # Lấy thông tin mạng sau khi chờ
-    new_received, new_sent = get_network_speed()
-    
-    # Tính toán tốc độ nhận và gửi trong 1 giây
-    download_speed = (new_received - old_received) / 1_000_000  # Mbps
-    upload_speed = (new_sent - old_sent) / 1_000_000  # Mbps
-    
-    print(f"Tốc độ tải xuống: {download_speed:.2f} Mbps")
-    print(f"Tốc độ tải lên: {upload_speed:.2f} Mbps")
+# Truy cập vào trang web của bạn
+url = "https://23110089.github.io/tets/"
+driver.get(url)
 
-# Gọi hàm để theo dõi tốc độ mạng
-monitor_network_speed()
+# Lặp vô hạn để theo dõi và in thông tin
+while True:    
+    # Lấy thông tin RAM đã sử dụng và tổng RAM
+    ram = psutil.virtual_memory()
+    ram_used = ram.used / (1024 ** 3)  # Đã dùng RAM (GB)
+    ram_total = ram.total / (1024 ** 3)  # Tổng RAM (GB)
+    ram_percent = ram.percent  # % RAM đã sử dụng
+    
+    # Lấy thông tin CPU đã sử dụng
+    cpu_percent = psutil.cpu_percent(interval=1)  # % CPU đã sử dụng trong 1 giây
+    
+    # Lấy thông tin số luồng, hash mỗi giây và tổng số hash từ trang web
+    try:
+        # Lấy số luồng
+        threads = driver.find_element(By.ID, 'threadsInfo').text.split(": ")[1]
+        # Lấy số hash mỗi giây
+        hashes_per_second = driver.find_element(By.ID, 'hashesInfo').text.split(": ")[1]
+        # Lấy tổng số hash
+        total_hashes = driver.find_element(By.ID, 'totalHashesInfo').text.split(": ")[1]
+    except Exception as e:
+        threads = "Không thể lấy"
+        hashes_per_second = "Không thể lấy"
+        total_hashes = "Không thể lấy"
+    
+    # In thông tin
+    os.system('clear')  # Xóa màn hình
+    print("Tiêu đề trang:", driver.title)
+    print(f"Số luồng đang sử dụng: {threads}")
+    print(f"Số hashes mỗi giây: {hashes_per_second}")
+    print(f"Tổng số hashes: {total_hashes}\n")
+    
+    print(f"Tổng RAM: {ram_total:.2f} GB")
+    print(f"Đã sử dụng RAM: {ram_used:.2f} GB")
+    print(f"% RAM đã sử dụng: {ram_percent}%")
+    print(f"% CPU đã sử dụng: {cpu_percent}%")
+    
+    sleep(1)
